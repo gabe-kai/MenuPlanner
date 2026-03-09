@@ -1,0 +1,10 @@
+chore: add project foundations and tooling
+
+- Initialize npm and git in MenuPlanner
+- Add high-level product design and implementation docs under docs/
+- Create base project structure (src/, tests/, .github/workflows/)
+- Add README, .gitignore, and AGENTS guide for AI assistants
+- Implement initial structured logging utility in src/lib/log.ts
+- Set up TypeScript, Jest, and React Testing Library with a sample log test
+- Add basic GitHub Actions CI workflow for typecheck, tests, and lint placeholder
+
