@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo } from "react";
 import { MealChip } from "@/components/MealChip";
 import { MealDetailPanel } from "@/components/MealDetailPanel";

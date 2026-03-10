@@ -1,9 +1,7 @@
-feat: scaffold Phase 1 toy planner
+chore: fix dev server issues and mark planner as client component
 
-- Install Next.js, React, Tailwind, and supporting tooling
-- Add Next app layout, globals, and basic dark theme styling
-- Implement Phase 1 weekly planner grid at /planner with fixed Coffee/Breakfast/Lunch/Dinner slots
-- Introduce Zustand planner and recipes stores with a few demo meals
-- Add reusable MealChip and a Phase 1 placeholder MealDetailPanel wired to selection
-- Add week helper tests and keep the logging test passing under Jest and strict TypeScript
+- Downgrade Tailwind to v3 and restore classic PostCSS plugin setup for compatibility with our current config
+- Remove CommonJS module type from package.json to align with Next.js ESM app code
+- Add "use client" directive to the planner page so Zustand hooks work correctly in the App Router
+- Clean up TypeScript configuration and ensure typecheck and Jest tests both pass after the changes
 
