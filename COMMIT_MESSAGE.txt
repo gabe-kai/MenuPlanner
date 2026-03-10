@@ -1,10 +1,9 @@
-chore: add project foundations and tooling
+feat: scaffold Phase 1 toy planner
 
-- Initialize npm and git in MenuPlanner
-- Add high-level product design and implementation docs under docs/
-- Create base project structure (src/, tests/, .github/workflows/)
-- Add README, .gitignore, and AGENTS guide for AI assistants
-- Implement initial structured logging utility in src/lib/log.ts
-- Set up TypeScript, Jest, and React Testing Library with a sample log test
-- Add basic GitHub Actions CI workflow for typecheck, tests, and lint placeholder
+- Install Next.js, React, Tailwind, and supporting tooling
+- Add Next app layout, globals, and basic dark theme styling
+- Implement Phase 1 weekly planner grid at /planner with fixed Coffee/Breakfast/Lunch/Dinner slots
+- Introduce Zustand planner and recipes stores with a few demo meals
+- Add reusable MealChip and a Phase 1 placeholder MealDetailPanel wired to selection
+- Add week helper tests and keep the logging test passing under Jest and strict TypeScript
 

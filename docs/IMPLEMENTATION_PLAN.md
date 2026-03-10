@@ -50,28 +50,30 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 ## Phase 1 – Project Scaffold & “Toy” Planner
 
 **Goal**: Simple weekly planner view with a few hardcoded meals.
+**Status**: Implemented on branch `feature/phase1-planner-scaffold` with a working weekly grid, demo meals, and basic detail panel.
 
 ### Features
 
 - `/planner`:
   - Current week only (no users/families).
   - Fixed slots: Coffee, Breakfast, Lunch, Dinner.
-  - Grid layout with `MealChip` components in cells.
+  - Grid layout with `MealChip` components in cells, backed by a small in-memory planner store.
 - `MealChip`:
-  - Tap opens a `MealDetailPanel` with placeholder info.
+  - Tap opens a `MealDetailPanel` with placeholder info (Phase 1 stub).
 - In-memory recipe list to populate demo meals.
 
 ### Tech & tooling
 
-- Initialize Next.js (TypeScript) + Tailwind CSS.
-- Add Zustand with minimal `plannerStore` and `recipesStore`.
+- Initialize Next.js (TypeScript) + Tailwind CSS. ✅
+- Add Zustand with minimal `plannerStore` and `recipesStore` for demo meals and recipe summaries. ✅
 - **Logging v1**:
   - `src/lib/log.ts` with `log.info/warn/error` wrapping `console.log`, including a consistent prefix and optional context object.
 - **Testing v1**:
   - Jest or Vitest + React Testing Library.
-  - Smoke tests:
-    - `/planner` renders week grid.
-    - Clicking a meal opens detail panel.
+  - Initial tests currently cover:
+    - `getCurrentWeekDays` helper for week computation.
+    - `log` utility behavior.
+  - A future improvement (optional) is to add a React component test for the `/planner` page once the Jest config is aligned with Next’s JSX transform out of the box.
 - **CI v1 (GitHub Actions)**:
   - Workflow: run `npm test` and `npm run lint` on push/PR.
 - **Git usage**:
