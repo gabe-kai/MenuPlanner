@@ -1,9 +1,8 @@
-feat: scaffold Phase 1 toy planner
+feat: implement Phase 2 planner navigation and recipe book
 
-- Install Next.js, React, Tailwind, and supporting tooling
-- Add Next app layout, globals, and basic dark theme styling
-- Implement Phase 1 weekly planner grid at /planner with fixed Coffee/Breakfast/Lunch/Dinner slots
-- Introduce Zustand planner and recipes stores with a few demo meals
-- Add reusable MealChip and a Phase 1 placeholder MealDetailPanel wired to selection
-- Add week helper tests and keep the logging test passing under Jest and strict TypeScript
+- Add week navigation (prev/this/next) and weekStart handling to the planner, including a School Lunch slot
+- Introduce a simple ingredient lane placeholder based on mock leftover counts
+- Expand planner and recipes Zustand stores to support demo meals, ingredients, and steps
+- Implement /recipes and /recipes/[id] routes with a basic Recipe Book and “add to planner” flow, returning to the planner via client-side navigation
+- Keep typecheck, Jest tests, and Next.js production build passing, and update docs/README to reflect Phase 2 status
 

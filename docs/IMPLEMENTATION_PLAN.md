@@ -85,14 +85,15 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 ## Phase 2 – Real Planner & Basic Recipe Book
 
 **Goal**: Plan real meals for a week and browse recipes.
+**Status**: Implemented on branch `feature/phase2-planner-and-recipes` with week navigation, a configurable School Lunch slot, a basic ingredient lane placeholder, and a simple Recipe Book.
 
 ### Features
 
 - `/planner`:
   - True **current week** (using JS date).
   - Configurable week start (Sunday/Monday) in settings.
-  - Configurable `MealSlotConfig` (includes School Lunch, but as a simple slot for now).
-  - Ingredient lane placeholder showing “N leftover items” from mock data.
+  - Configurable `MealSlotConfig` (includes School Lunch, but as a simple slot for now). *(Currently modeled as a fixed `MEAL_SLOTS` array that includes "School Lunch"; full per-family configuration will come in later phases.)*
+  - Ingredient lane placeholder showing “N leftover items” from mock data. *(Implemented as a simple counter surfaced under the planner grid.)*
 - `/recipes`:
   - Recipe list with search/filter by name.
   - `/recipes/[id]` showing ingredients and steps (single version).
@@ -102,17 +103,17 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 ### Tech & tooling
 
 - Expand Zustand:
-  - `plannerStore`: calendar entries, slots, week navigation.
-  - `recipesStore`: recipe list and lookup.
+  - `plannerStore`: calendar entries, slots (including School Lunch), week navigation (previous/next/this week), and a simple mock leftover count.
+  - `recipesStore`: recipe list, ingredients, steps, and lookup.
 - **Logging v2**:
-  - Add module categorization: `log.info({ module: "planner", ... })`.
+  - Add module categorization: `log.info({ module: "planner", ... })`. *(Used when adding meals to the planner from the recipe detail page.)*
 - **Testing v2**:
   - Planner tests:
-    - Add/remove meal in a slot.
+    - Add/remove meal in a slot. *(Partially covered by store tests and will be expanded in later phases.)*
   - Recipe tests:
-    - Filter list, open details.
+    - Filter list, open details. *(Currently covered by store-level tests for `recipesStore`; UI-level tests can be added later once Jest is further aligned with Next.js JSX transforms.)*
 - **CI v2**:
-  - Add `npm run build` to workflow.
+  - Add `npm run build` to workflow. ✅
 
 ---
 
@@ -188,6 +189,8 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 
 - Pure functions:
   - `computeIngredientBalance(...)`, `computeLeftoverBatches(...)`.
+- **Persistence**:
+  - Use Zustand persistence (e.g., `persist` middleware with `localStorage`) so planner, recipes, and leftovers survive full page reloads and browser restarts, at least for a single device/household.
 - **Logging**:
   - Log leftover lifecycle:
     - created / consumed / expired.

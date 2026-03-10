@@ -1,12 +1,41 @@
+"use client";
+
 import { useMemo } from "react";
+import Link from "next/link";
 import { MealChip } from "@/components/MealChip";
 import { MealDetailPanel } from "@/components/MealDetailPanel";
 import { usePlannerStore, MEAL_SLOTS } from "@/stores/plannerStore";
 import { useRecipesStore } from "@/stores/recipesStore";
+import { getCurrentWeekDays } from "@/lib/week";
 
 export default function PlannerPage() {
-  const { weekDays, meals, selectedMealId, selectMeal } = usePlannerStore();
+  const {
+    weekOffset,
+    weekStart,
+    meals,
+    selectedMealId,
+    selectMeal,
+    nextWeek,
+    previousWeek,
+    resetWeek,
+    mockLeftoverCount,
+  } = usePlannerStore();
   const { getRecipeById } = useRecipesStore();
+
+  const referenceDate = useMemo(() => {
+    const base = new Date();
+    const shifted = new Date(
+      base.getFullYear(),
+      base.getMonth(),
+      base.getDate() + weekOffset * 7,
+    );
+    return shifted;
+  }, [weekOffset]);
+
+  const weekDays = useMemo(
+    () => getCurrentWeekDays(referenceDate, weekStart),
+    [referenceDate, weekStart],
+  );
 
   const selectedMeal = useMemo(
     () => meals.find((m) => m.id === selectedMealId) ?? null,
@@ -18,12 +47,48 @@ export default function PlannerPage() {
 
   return (
     <div className="space-y-4">
-      <section>
-        <h2 className="text-lg font-semibold tracking-tight">Planner</h2>
-        <p className="text-sm text-slate-400">
-          Phase 1 toy planner – fixed Coffee/Breakfast/Lunch/Dinner slots for
-          the current week, with a few demo meals.
-        </p>
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Planner</h2>
+          <p className="text-sm text-slate-400">
+            Phase 2 planner – current week view with fixed Coffee/Breakfast/
+            Lunch/School Lunch/Dinner slots and a few demo meals.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="inline-flex rounded-full border border-slate-700 bg-slate-900 p-0.5">
+            <button
+              type="button"
+              className="rounded-full px-3 py-1 font-medium text-slate-200 hover:bg-slate-800"
+              onClick={previousWeek}
+            >
+              ◀ Prev
+            </button>
+            <button
+              type="button"
+              className="rounded-full px-3 py-1 font-medium text-slate-200 hover:bg-slate-800"
+              onClick={resetWeek}
+            >
+              This week
+            </button>
+            <button
+              type="button"
+              className="rounded-full px-3 py-1 font-medium text-slate-200 hover:bg-slate-800"
+              onClick={nextWeek}
+            >
+              Next ▶
+            </button>
+          </div>
+          <span className="text-[11px] text-slate-500">
+            {weekDays[0]?.label} – {weekDays[6]?.label}
+          </span>
+          <Link
+            href="/recipes"
+            className="ml-2 rounded-full border border-emerald-500/60 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-300 hover:bg-emerald-500/20"
+          >
+            Open recipe book
+          </Link>
+        </div>
       </section>
 
       <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60">
@@ -90,6 +155,12 @@ export default function PlannerPage() {
           </tbody>
         </table>
       </div>
+
+      <section className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-3 py-2 text-xs text-slate-300">
+        <span className="font-semibold text-slate-200">Ingredient lane</span>{" "}
+        (placeholder): {mockLeftoverCount} leftover item
+        {mockLeftoverCount === 1 ? "" : "s"} this week (mock data).
+      </section>
 
       {selectedMeal && (
         <div className="mt-4 md:mt-6">

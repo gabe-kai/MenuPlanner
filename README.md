@@ -22,11 +22,20 @@ Touch-first family meal and grocery planner with a shared calendar, recipe book,
 
 ## Getting started
 
-_Implementation is being brought up in phases. After Phase 0 is complete, this section will be updated with exact commands to run the dev server and tests._
+_Implementation is being brought up in phases. Phases 0–2 are in progress; the commands below are already available._
 
-Planned commands:
+### Commands
 
-- `npm run dev` – Start the Next.js dev server.
-- `npm test` – Run unit and component tests.
-- `npm run lint` – Run linters.
+- `npm run dev` – Start the Next.js dev server (default at `http://localhost:3000`).
+- `npm run build` – Create a production build.
+- `npm start` – Run the production build.
+- `npm test` – Run unit tests (Jest).
+- `npm run typecheck` – Run TypeScript type checking.
+- `npm run lint` – Run linters (currently a placeholder echo).
+
+### Current routes (Phase 2)
+
+- `/planner` – Weekly planner with Coffee/Breakfast/Lunch/School Lunch/Dinner slots, week navigation, demo meals, and a placeholder ingredient lane.
+- `/recipes` – Simple Recipe Book listing demo recipes with search.
+- `/recipes/[id]` – Recipe detail view with ingredients, steps, and an “add to planner” flow for the current week.
 
