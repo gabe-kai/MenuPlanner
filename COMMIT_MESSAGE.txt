@@ -1,7 +1,8 @@
-chore: fix dev server issues and mark planner as client component
+feat: implement Phase 2 planner navigation and recipe book
 
-- Downgrade Tailwind to v3 and restore classic PostCSS plugin setup for compatibility with our current config
-- Remove CommonJS module type from package.json to align with Next.js ESM app code
-- Add "use client" directive to the planner page so Zustand hooks work correctly in the App Router
-- Clean up TypeScript configuration and ensure typecheck and Jest tests both pass after the changes
+- Add week navigation (prev/this/next) and weekStart handling to the planner, including a School Lunch slot
+- Introduce a simple ingredient lane placeholder based on mock leftover counts
+- Expand planner and recipes Zustand stores to support demo meals, ingredients, and steps
+- Implement /recipes and /recipes/[id] routes with a basic Recipe Book and “add to planner” flow, returning to the planner via client-side navigation
+- Keep typecheck, Jest tests, and Next.js production build passing, and update docs/README to reflect Phase 2 status
 
