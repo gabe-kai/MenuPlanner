@@ -12,9 +12,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
+*cookie*.txt
 *.log
 *.tsbuildinfo
+.data/
+prisma/dev.db
+prisma/dev.db-journal
 

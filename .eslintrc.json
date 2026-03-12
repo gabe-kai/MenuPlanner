@@ -1,0 +1,12 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "ignorePatterns": [
+    ".next/",
+    "coverage/",
+    "dist/",
+    "prisma/dev.db*"
+  ],
+  "rules": {
+    "no-console": "off"
+  }
+}

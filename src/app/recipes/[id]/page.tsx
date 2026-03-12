@@ -5,7 +5,9 @@ import { notFound, useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { usePlannerStore, MEAL_SLOTS } from "@/stores/plannerStore";
 import { useRecipesStore } from "@/stores/recipesStore";
+import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 import { getCurrentWeekDays } from "@/lib/week";
+import { getActorFromStoreState } from "@/lib/auth/actors";
 
 export default function RecipeDetailPage() {
   const params = useParams<{ id: string }>();
@@ -13,6 +15,15 @@ export default function RecipeDetailPage() {
   const router = useRouter();
   const { getRecipeById } = useRecipesStore();
   const { addMeal, weekOffset, weekStart } = usePlannerStore();
+  const { users, families, memberships, currentUserId, currentFamilyId } =
+    useAuthAndFamilyStore();
+  const actor = getActorFromStoreState(
+    currentUserId,
+    currentFamilyId,
+    users,
+    families,
+    memberships,
+  );
 
   const recipe = getRecipeById(id);
   if (!recipe) {
@@ -37,15 +48,25 @@ export default function RecipeDetailPage() {
   const [dayKey, setDayKey] = useState(weekDays[0]?.key ?? "");
   const [slot, setSlot] = useState<(typeof MEAL_SLOTS)[number]>("Dinner");
 
+  const policyMessage =
+    !actor
+      ? "Sign in to add meals to your planner."
+      : actor.isAdult
+        ? null
+        : actor.editPolicy === "no_edit"
+          ? "Your account cannot add meals in no-edit mode."
+          : null;
+
   const handleAddToPlanner = () => {
     if (!dayKey) return;
-    addMeal(dayKey, slot, recipe.id);
+    if (!actor) return;
+    addMeal(dayKey, slot, recipe.id, actor.user.id);
     router.push("/planner");
   };
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">
             {recipe.name}
@@ -54,7 +75,7 @@ export default function RecipeDetailPage() {
         </div>
         <Link
           href="/recipes"
-          className="rounded-full border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+          className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 hover:bg-slate-800"
         >
           Back to recipes
         </Link>
@@ -84,6 +105,11 @@ export default function RecipeDetailPage() {
         <h3 className="text-sm font-semibold tracking-tight">
           Add to this week&apos;s planner
         </h3>
+        {policyMessage && (
+          <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-[11px] text-amber-200">
+            {policyMessage}
+          </p>
+        )}
         <div className="flex flex-wrap items-end gap-3 text-xs">
           <div>
             <label className="mb-1 block text-slate-400">Day</label>
@@ -118,7 +144,8 @@ export default function RecipeDetailPage() {
           <button
             type="button"
             onClick={handleAddToPlanner}
-            className="ml-auto rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400"
+            disabled={Boolean(policyMessage)}
+            className="ml-auto rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-600"
           >
             Add to planner
           </button>
@@ -127,4 +154,3 @@ export default function RecipeDetailPage() {
     </div>
   );
 }
-
