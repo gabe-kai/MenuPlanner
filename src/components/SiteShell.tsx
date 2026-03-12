@@ -95,13 +95,21 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </select>
           ) : null}
           {session.isAuthenticated ? (
-            <button
-              type="button"
-              onClick={() => void signOutUser()}
-              className="rounded-full border border-rose-500 px-3 py-1 text-slate-200 hover:bg-rose-500/20"
-            >
-              Sign out
-            </button>
+            <>
+              <Link
+                href="/account"
+                className="rounded-full border border-blue-500 px-3 py-1 text-blue-200 hover:bg-blue-500/20"
+              >
+                Account
+              </Link>
+              <button
+                type="button"
+                onClick={() => void signOutUser()}
+                className="rounded-full border border-rose-500 px-3 py-1 text-slate-200 hover:bg-rose-500/20"
+              >
+                Sign out
+              </button>
+            </>
           ) : (
             <Link
               href="/login"

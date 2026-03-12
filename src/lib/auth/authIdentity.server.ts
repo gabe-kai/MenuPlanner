@@ -40,6 +40,21 @@ export type RegisterAuthIdentityResult =
   | { ok: true; userId: string }
   | { ok: false; reason: "already_exists" | "invalid_payload" };
 
+export interface UpdateAuthIdentityNameInput {
+  userId: string;
+  name: string;
+}
+
+export interface UpdateAuthIdentityPasswordInput {
+  userId: string;
+  currentPassword: string;
+  nextPassword: string;
+}
+
+export type UpdateAuthIdentityPasswordResult =
+  | { ok: true }
+  | { ok: false; reason: "not_found" | "invalid_password" | "invalid_payload" };
+
 type LegacyDemoIdentityRecord = {
   userId: string;
   name: string;
@@ -271,6 +286,58 @@ export async function getAuthIdentityByUserId(userId: string) {
     where: { userId: normalizedUserId },
   });
   return mapAuthIdentity(identity);
+}
+
+export async function getAuthIdentitySnapshot(userId: string) {
+  return getAuthIdentityByUserId(userId);
+}
+
+export async function updateAuthIdentityName(input: UpdateAuthIdentityNameInput) {
+  await ensureAuthIdentityBootstrap();
+
+  const normalizedUserId = normalizeUserId(input.userId);
+  const name = input.name.trim();
+  if (!normalizedUserId || !name) return false;
+
+  const identity = await prisma.authUser.findUnique({
+    where: { userId: normalizedUserId },
+    select: { id: true },
+  });
+  if (!identity) return false;
+
+  await prisma.authUser.update({
+    where: { userId: normalizedUserId },
+    data: { name },
+  });
+  return true;
+}
+
+export async function updateAuthIdentityPassword(
+  input: UpdateAuthIdentityPasswordInput,
+): Promise<UpdateAuthIdentityPasswordResult> {
+  await ensureAuthIdentityBootstrap();
+
+  const normalizedUserId = normalizeUserId(input.userId);
+  if (!normalizedUserId || !input.currentPassword || !input.nextPassword) {
+    return { ok: false, reason: "invalid_payload" };
+  }
+
+  const identity = await prisma.authUser.findUnique({
+    where: { userId: normalizedUserId },
+  });
+  if (!identity) return { ok: false, reason: "not_found" };
+
+  const isValidPassword = await compare(input.currentPassword, identity.passwordHash);
+  if (!isValidPassword) {
+    return { ok: false, reason: "invalid_password" };
+  }
+
+  const passwordHash = await hash(input.nextPassword, PASSWORD_HASH_ROUNDS);
+  await prisma.authUser.update({
+    where: { userId: normalizedUserId },
+    data: { passwordHash },
+  });
+  return { ok: true };
 }
 
 export async function getAuthEditPolicyForUser(userId: string) {

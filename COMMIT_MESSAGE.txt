@@ -1,78 +1,14 @@
-feat: integrate NextAuth.js as phase 3.6 real auth path
+feat: finish phase 3.8 account self-service and green local validation
 
- - Extended `src/lib/auth/authGateway.ts` and `src/lib/auth/session.ts`:
-   - added real-mode session refresh flow (`/api/auth/refresh`),
-   - added structured auth logs for `auth.refresh`, `auth.tokenInvalid`, and `auth.signInFailure`,
-   - hardened session restore/apply/reset decision paths (including token invalidation logs).
- - Added `POST /api/auth/refresh` (`src/app/api/auth/refresh/route.ts`) with NextAuth-backed session checks.
-- Added NextAuth.js credential provider bootstrap:
-   - added `src/lib/auth/nextAuth.ts`,
-   - added `/api/auth/[...nextauth]/route.ts`,
-   - migrated `useRealAuth` guard to read NextAuth session data in `src/lib/auth/session.ts` through `/api/auth/session`.
-- Updated `/login` real-mode flow in `src/app/login/page.tsx`:
-   - disabled in-flight submit,
-   - added demo credentials input for real mode and routed sign-in through NextAuth session callback path,
-   - surfaced sign-in errors without navigation,
-   - kept `redirectTo` return-path behavior.
-- Added canonical auth identities in `src/lib/auth/demoIdentity.ts` and switched auth data source to share those seeded users with `src/stores/authAndFamilyStore.ts` for consistency.
-- Added `NEXTAUTH_IDENTITY_CREDENTIALS` support in `src/lib/auth/demoIdentity.ts` so NextAuth credentials can be configured per-user without code changes.
-- Added `.env.example` documenting real-auth toggles (`NEXT_PUBLIC_USE_REAL_AUTH`), NextAuth secret requirements, and optional per-user credential overrides.
-- Updated route guard:
-   - `src/proxy.ts` now reads verified NextAuth JWT claims in real mode via `getToken`.
-   - kept existing `SESSION_COOKIE_NAME`-based fallback checks for mock mode.
-- Kept existing sign-out endpoint behavior and expanded it to clear NextAuth cookie names.
-- Added NextAuth dependency in `package.json`.
-- Updated real-mode login shell to accept raw username/password input and enforce sign-in failure on missing/invalid session return.
-- Expanded auth tests:
-  - `tests/real-auth-gateway.test.ts` now validates refresh-on-restore,
-  - `tests/login-page.test.tsx` now validates sign-in failure stay-on-page behavior and explicit success return in mocks,
-  - `tests/session-cookie.test.ts` now validates compatibility with normalized issued/expiry fields,
-  - `tests/proxy-real-auth.test.ts` now covers NextAuth/JWT-backed route-guard behavior in real mode,
-  - `tests/proxy.test.ts` now validates expired-session redirect handling.
-- Added runtime identity directory enhancements:
-  - `src/lib/auth/demoIdentity.ts` now exposes registration and actor fallback helpers for real-mode user resolution.
-  - `src/stores/authAndFamilyStore.ts` now hydrates from identity directory helpers.
-  - `src/lib/auth/actors.ts` now falls back to identity directory actor resolution when store misses user/family data.
-  - `POST /api/auth/register` added for local identity registration while using NextAuth credentials flow.
-- Updated docs:
-  - `docs/IMPLEMENTATION_PLAN.md` checklist progress for token refresh/lifecycle hardening and expired-session guards,
-  - `README.md` notes for `/api/auth/refresh` and auth hardening status.
-- Validation:
-  - Executed `npm test -- --runInBand` successfully after test-path fixes for real-mode proxy and login flows.
-- Preserved all existing school-lunch policy/store/page implementations and current routing structure.
-
-feat: add real-auth registration UI and documentation updates
-
-- Added `/register` user onboarding UI (`src/app/register/page.tsx`) with username, display name, role selection, optional familyId, password + confirm, and clear error/success states.
-- Added links to registration from `/login` and header shell (`src/app/login/page.tsx`, `src/components/SiteShell.tsx`) for a direct user flow.
-- Wired registration flow to DB-backed identity creation via `POST /api/auth/register` and immediate sign-in attempt in real-auth mode.
-- Added focused component coverage in `tests/register-page.test.tsx` (success path, API failure path, password-mismatch validation).
-- Updated docs for the new onboarding path:
-  - `README.md` now documents `/register` and the Prisma-backed registration payload/route.
-  - `docs/IMPLEMENTATION_PLAN.md` Phase 3.6 checklist now records registration UX task completion.
-- Validation:
-  - Ran `npm test -- --runInBand tests/real-auth-gateway.test.ts tests/proxy-real-auth.test.ts tests/login-page.test.tsx tests/register-page.test.tsx`.
-  - Ran `npm test -- --runInBand` full suite.
-
-feat: plan user settings and admin console phases (3.8/3.9)
-
-- Updated `docs/IMPLEMENTATION_PLAN.md` to add:
-  - Phase 3.8 – User Account Settings & Self-Service (profile + password self-management),
-  - Phase 3.9 – Admin Console & Cross-Entity Management (global admin scope and policy/permission governance).
-- Defined explicit feature scope, technical implementation guidance, and execution-ready checklists for both phases.
-
-feat: finalize publish hardening for real auth
-
-- Added production-ready auth env guidance in `.env.example` (`NEXTAUTH_URL`, `NEXTAUTH_TRUST_HOST`, `NEXTAUTH_DEBUG`) and clarified `NEXTAUTH_SECRET` requirements for real-auth.
-- Added ESLint support with dedicated scripts:
-  - `npm run lint` for code lint checks,
-  - `npm run lint:tests` for test-only execution,
-  - `npm run ci:check` for lint + tests + build gating.
-- Added `.eslintrc.json` and integrated dependency lockfile workflow (`package-lock.json` now tracked).
-- Added Prisma migration setup for auth identity:
-  - `prisma/migrations/migration_lock.toml`
-  - `prisma/migrations/20260312_init_auth_identity/migration.sql`
-  - `db:migrate:dev` and `db:migrate:deploy` scripts
-- Added migration-first publish guidance in `README.md` and `docs/IMPLEMENTATION_PLAN.md` and expanded operational verification checklist.
-- Hardened `.gitignore` to ignore temporary `*cookie*.txt` artifacts from future local auth debugging.
-
+- Added `/account` self-service surface with authenticated load/save profile flow and password rotation.
+- Added guarded account APIs:
+  - `GET /api/auth/me` for authenticated profile snapshot,
+  - `PUT /api/auth/me` for display-name updates,
+  - `POST /api/auth/me/password` for current-password-required rotation.
+- Added `Session`-anchored settings route protection via proxy middleware and header navigation entry.
+- Added focused account API and page tests (`tests/account-api-route.test.ts`, `tests/account-page.test.tsx`).
+- Added auth/service typing fixes and a lint cleanup pass for strict TS compatibility (`AuthOptions` typing, account service helpers, store strip-helper cleanup).
+- Updated ESLint tooling to a runnable configuration with current dependency set and validated:
+  - `npm test -- --runInBand`
+  - `npm run lint`
+  - `npm run build`

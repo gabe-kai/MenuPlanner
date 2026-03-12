@@ -15,6 +15,10 @@ function isAdultRoute(pathname: string) {
   return pathname.startsWith("/school-lunch/adult");
 }
 
+function isAccountRoute(pathname: string) {
+  return pathname === "/account";
+}
+
 async function getActorFromSession(request: NextRequest, sessionCookie: string | undefined) {
   const state = useAuthAndFamilyStore.getState();
   if (useRealAuth) {
@@ -100,7 +104,7 @@ async function getActorFromSession(request: NextRequest, sessionCookie: string |
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (!isSchoolLunchRoute(pathname)) {
+  if (!isSchoolLunchRoute(pathname) && !isAccountRoute(pathname)) {
     return NextResponse.next();
   }
 
@@ -121,5 +125,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/school-lunch/:path*"],
+  matcher: ["/school-lunch/:path*", "/account"],
 };

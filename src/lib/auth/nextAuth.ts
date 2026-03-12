@@ -4,12 +4,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { log } from "@/lib/log";
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+type AuthOptions = NextAuthOptions & { trustHost?: boolean };
+
 const usingRealAuth = process.env.NEXT_PUBLIC_USE_REAL_AUTH === "true";
 if (!nextAuthSecret && usingRealAuth && process.env.NODE_ENV === "production") {
   throw new Error("NEXTAUTH_SECRET is required for NextAuth to run in production.");
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: AuthOptions = {
   ...(nextAuthSecret ? { secret: nextAuthSecret } : {}),
   trustHost: process.env.NEXTAUTH_TRUST_HOST === "true",
   pages: {

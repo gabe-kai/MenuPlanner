@@ -149,8 +149,9 @@ function logPlanEvent(
 }
 
 function stripPendingChoice(day: SchoolLunchDay) {
-  const { pendingChoice: _ignore, ...rest } = day;
-  return rest;
+  const nextDay = { ...day };
+  delete nextDay.pendingChoice;
+  return nextDay;
 }
 
 export const useSchoolLunchStore = create<SchoolLunchState>((set) => ({
@@ -225,7 +226,8 @@ export const useSchoolLunchStore = create<SchoolLunchState>((set) => ({
             };
           }
 
-          const { pendingChoice: _ignorePendingChoice, ...existingDay } = day;
+          const existingDay = { ...day };
+          delete existingDay.pendingChoice;
           return {
             ...existingDay,
             choice,

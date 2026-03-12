@@ -413,13 +413,13 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 
 ### Implementation checklist (execution-ready)
 
-- [ ] Add `/account` page with authenticated route protection.
-- [ ] Add profile read/update API path and persistence path.
-- [ ] Add secure password rotation API path with current-password verification.
-- [ ] Add session-based validation guardrails for all account writes.
-- [ ] Add audit logging for account settings updates (`account.profileUpdated`, `account.passwordChanged`).
-- [ ] Add focused tests for account read/update/password flows.
-- [ ] Add `SiteShell` link and access to `/account`.
+- [x] Add `/account` page with authenticated route protection.
+- [x] Add profile read/update API path and persistence path.
+- [x] Add secure password rotation API path with current-password verification.
+- [x] Add session-based validation guardrails for all account writes.
+- [x] Add audit logging for account settings updates (`account.profileUpdated`, `account.passwordChanged`).
+- [x] Add focused tests for account read/update/password flows.
+- [x] Add `SiteShell` link and access to `/account`.
 
 ---
 
