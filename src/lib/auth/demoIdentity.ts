@@ -1,4 +1,4 @@
-import type { ChildEditPolicy, Membership, User } from "@/stores/authAndFamilyStore";
+import type { ChildEditPolicy, User } from "@/stores/authAndFamilyStore";
 
 export interface DemoIdentityUser extends User {
   familyId: string;
