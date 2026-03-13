@@ -18,6 +18,16 @@ jest.mock("next-auth/jwt", () => ({
   getToken: () => null,
 }));
 
+const originalAdminUsers = process.env.MENU_ADMIN_USER_IDS;
+
+afterEach(() => {
+  if (originalAdminUsers === undefined) {
+    delete process.env.MENU_ADMIN_USER_IDS;
+  } else {
+    process.env.MENU_ADMIN_USER_IDS = originalAdminUsers;
+  }
+});
+
 describe("school-lunch proxy", () => {
   function makeRequest(pathname: string, cookieValue?: string) {
     const url = `http://localhost:3000${pathname}`;
@@ -88,6 +98,20 @@ describe("school-lunch proxy", () => {
       ),
     );
     expectRedirect(response, "/login");
+  });
+
+  it("redirects non-admin users from admin to planner", async () => {
+    const response = await proxy(makeRequest("/admin", encodeSessionCookie({ userId: "sarah", familyId: "fam-1" })));
+    expectRedirect(response, "/planner");
+  });
+
+  it("allows configured admin users onto admin routes", async () => {
+    process.env.MENU_ADMIN_USER_IDS = "mom";
+    const response = await proxy(
+      makeRequest("/admin", encodeSessionCookie({ userId: "mom", familyId: "fam-1" })),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 
   it("redirects expired sessions to login", async () => {

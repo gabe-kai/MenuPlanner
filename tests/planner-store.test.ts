@@ -22,4 +22,33 @@ describe("planner store policy enforcement", () => {
 
     expect(usePlannerStore.getState().meals.length).toBe(beforeCount + 1);
   });
+
+  it("prevents child actors from deleting meals", () => {
+    const beforeCount = usePlannerStore.getState().meals.length;
+    usePlannerStore.getState().deleteMeal("demo-1", "sarah");
+
+    expect(usePlannerStore.getState().meals.length).toBe(beforeCount);
+    expect(usePlannerStore.getState().meals.find((meal) => meal.id === "demo-1")).toBeDefined();
+  });
+
+  it("allows adult actors to delete meals", () => {
+    const beforeCount = usePlannerStore.getState().meals.length;
+    usePlannerStore.getState().deleteMeal("demo-1", "mom");
+
+    expect(usePlannerStore.getState().meals.length).toBe(beforeCount - 1);
+    expect(usePlannerStore.getState().meals.find((meal) => meal.id === "demo-1")).toBeUndefined();
+  });
+
+  it("allows adults to clear all planner meals", () => {
+    usePlannerStore.getState().clearMeals("mom");
+
+    expect(usePlannerStore.getState().meals.length).toBe(0);
+  });
+
+  it("prevents child actors from clearing all planner meals", () => {
+    const beforeCount = usePlannerStore.getState().meals.length;
+    usePlannerStore.getState().clearMeals("sarah");
+
+    expect(usePlannerStore.getState().meals.length).toBe(beforeCount);
+  });
 });

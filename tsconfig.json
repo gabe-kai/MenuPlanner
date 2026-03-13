@@ -62,6 +62,7 @@
     "next-env.d.ts",
     "src/**/*",
     "tests/**/*",
+    "middleware.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],

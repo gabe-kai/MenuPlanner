@@ -6,22 +6,32 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useRealAuth } from "@/lib/auth/authGateway";
 import { signInUser } from "@/lib/auth/session";
+import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 
 type RoleOption = "adult" | "child";
 
 type RegisterResponse = {
   ok?: true;
   userId?: string;
+  familyId?: string;
+  familyName?: string;
   error?: string;
 };
+
+type FamilyMode = "join-existing" | "create-new";
 
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { families, createFamily } = useAuthAndFamilyStore();
+  const hasExistingFamilies = families.length > 0;
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<RoleOption>("adult");
-  const [familyId, setFamilyId] = useState("");
+  const [familyMode, setFamilyMode] = useState<FamilyMode>("join-existing");
+  const effectiveFamilyMode = familyMode === "join-existing" && hasExistingFamilies ? "join-existing" : "create-new";
+  const [familyId, setFamilyId] = useState<string>(families[0]?.id ?? "");
+  const [familyName, setFamilyName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -38,6 +48,8 @@ function RegisterPageContent() {
     const normalizedUserId = userId.trim().toLowerCase();
     const trimmedName = name.trim();
     const trimmedFamilyId = familyId.trim();
+    const trimmedFamilyName = familyName.trim();
+    const usingJoinMode = effectiveFamilyMode === "join-existing";
 
     if (!normalizedUserId) {
       setErrorMessage("Please choose a username.");
@@ -55,6 +67,14 @@ function RegisterPageContent() {
       setErrorMessage("Passwords do not match.");
       return;
     }
+    if (usingJoinMode && !trimmedFamilyId) {
+      setErrorMessage("Please choose a family.");
+      return;
+    }
+    if (!usingJoinMode && !trimmedFamilyName) {
+      setErrorMessage("Please provide a family name.");
+      return;
+    }
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -69,13 +89,17 @@ function RegisterPageContent() {
           name: trimmedName,
           role,
           password,
-          ...(trimmedFamilyId.length > 0 ? { familyId: trimmedFamilyId } : {}),
+          ...(usingJoinMode
+            ? { familyMode: "join", familyId: trimmedFamilyId }
+            : { familyMode: "create", familyName: trimmedFamilyName }),
         } satisfies {
           userId: string;
           name: string;
           role: RoleOption;
           password: string;
+          familyMode?: "create" | "join";
           familyId?: string;
+          familyName?: string;
         }),
       });
       const payload = (await response.json().catch(() => null)) as RegisterResponse | null;
@@ -86,6 +110,9 @@ function RegisterPageContent() {
       if (!payload?.ok) {
         setErrorMessage("Registration failed.");
         return;
+      }
+      if (!usingJoinMode) {
+        createFamily(trimmedFamilyName, undefined, payload.familyId);
       }
 
       setSuccessMessage("Account created successfully. Signing you in...");
@@ -152,16 +179,58 @@ function RegisterPageContent() {
         />
       </label>
 
-      <label className="block">
-        <span className="mb-1 block text-xs text-slate-400">Family ID (optional)</span>
-        <input
-          type="text"
-          value={familyId}
-          onChange={(event) => setFamilyId(event.target.value)}
-          placeholder="fam-1"
-          className="w-full max-w-xs rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100"
-        />
-      </label>
+      <div className="space-y-2">
+        <label className="block">
+          <span className="mb-1 block text-xs text-slate-400">Family setup</span>
+          <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-300">
+            <label className="flex items-center gap-2">
+            <input
+                type="radio"
+              checked={effectiveFamilyMode === "join-existing"}
+                onChange={() => setFamilyMode("join-existing")}
+              disabled={!hasExistingFamilies}
+              />
+              <span>Join existing family</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={familyMode === "create-new"}
+                onChange={() => setFamilyMode("create-new")}
+              />
+              <span>Create new family</span>
+            </label>
+          </div>
+        </label>
+          {effectiveFamilyMode === "join-existing" ? (
+          <label className="block">
+            <span className="mb-1 block text-xs text-slate-400">Family</span>
+            <select
+              value={familyId}
+              onChange={(event) => setFamilyId(event.target.value)}
+              className="w-full max-w-xs rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100"
+            >
+              <option value="">Select family</option>
+              {families.map((family) => (
+                <option key={family.id} value={family.id}>
+                  {family.name} ({family.id})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <label className="block">
+            <span className="mb-1 block text-xs text-slate-400">Family name</span>
+            <input
+              type="text"
+              value={familyName}
+              onChange={(event) => setFamilyName(event.target.value)}
+              placeholder="Family name"
+              className="w-full max-w-xs rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100"
+            />
+          </label>
+        )}
+      </div>
 
       <label className="block">
         <span className="mb-1 block text-xs text-slate-400">Role</span>

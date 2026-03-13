@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const push = jest.fn();
+const mockFetch: jest.MockedFunction<typeof fetch> = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
@@ -14,9 +15,8 @@ jest.mock("next/link", () => ({
   ),
 }));
 
-const mockFetch = jest.fn() as unknown as typeof fetch;
 Object.defineProperty(globalThis, "fetch", {
-  value: mockFetch,
+  value: mockFetch as typeof fetch,
   configurable: true,
   writable: true,
 });
@@ -75,8 +75,8 @@ describe("AccountPage", () => {
     await waitFor(() => {
       const request = mockFetch.mock.calls[1];
       expect(request).toBeDefined();
-      expect(request[0]).toBe("/api/auth/me");
-      expect((request[1] as RequestInit).method).toBe("PUT");
+      expect(request?.[0]).toBe("/api/auth/me");
+      expect(((request?.[1] as RequestInit | undefined) ?? {}).method).toBe("PUT");
     });
 
     await waitFor(() => {
@@ -112,8 +112,8 @@ describe("AccountPage", () => {
     await waitFor(() => {
       const request = mockFetch.mock.calls[1];
       expect(request).toBeDefined();
-      expect(request[0]).toBe("/api/auth/me/password");
-      expect((request[1] as RequestInit).method).toBe("POST");
+      expect(request?.[0]).toBe("/api/auth/me/password");
+      expect(((request?.[1] as RequestInit | undefined) ?? {}).method).toBe("POST");
     });
 
     await waitFor(() => {

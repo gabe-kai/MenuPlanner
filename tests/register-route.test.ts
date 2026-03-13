@@ -11,9 +11,10 @@ jest.mock("next/server", () => ({
 
 import { POST } from "@/app/api/auth/register/route";
 import { registerAuthIdentity } from "@/lib/auth/authIdentity.server";
+import type { NextRequest } from "next/server";
 
 jest.mock("@/lib/auth/authIdentity.server", () => ({
-  registerAuthIdentity: jest.fn(async () => ({ ok: true, userId: "gabe" })),
+  registerAuthIdentity: jest.fn(async () => ({ ok: true, userId: "gabe", familyId: "fam-1" })),
 }));
 
 const mockedRegisterAuthIdentity = registerAuthIdentity as jest.MockedFunction<
@@ -25,7 +26,7 @@ function buildRequest(payload: object) {
     async json() {
       return payload;
     },
-  } as unknown as { json: () => Promise<object> };
+  } as unknown as NextRequest;
 }
 
 describe("register endpoint", () => {

@@ -17,6 +17,7 @@ jest.mock("next-auth/jwt", () => ({
 
 const originalUseRealAuth = process.env.NEXT_PUBLIC_USE_REAL_AUTH;
 const originalUseRealAuthSecret = process.env.NEXTAUTH_SECRET;
+const originalAdminUsers = process.env.MENU_ADMIN_USER_IDS;
 
 describe("school-lunch proxy in real-auth mode", () => {
   beforeAll(() => {
@@ -25,6 +26,11 @@ describe("school-lunch proxy in real-auth mode", () => {
 
   afterEach(() => {
     getTokenMock.mockReset();
+    if (originalAdminUsers === undefined) {
+      delete process.env.MENU_ADMIN_USER_IDS;
+    } else {
+      process.env.MENU_ADMIN_USER_IDS = originalAdminUsers;
+    }
   });
 
   afterAll(() => {
@@ -82,6 +88,20 @@ describe("school-lunch proxy in real-auth mode", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("allows admin token onto admin routes", async () => {
+    process.env.MENU_ADMIN_USER_IDS = "mom";
+    const proxy = await getProxy();
+    getTokenMock.mockResolvedValueOnce({
+      userId: "mom",
+      familyId: "fam-1",
+      role: "child",
+    });
+
+    const response = await proxy(makeRequest("/admin"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
   it("allows authenticated child token through to child school-lunch route", async () => {
     const proxy = await getProxy();
     getTokenMock.mockResolvedValueOnce({
@@ -109,6 +129,18 @@ describe("school-lunch proxy in real-auth mode", () => {
     expectRedirect(response, "/school-lunch/child");
   });
 
+  it("redirects child token from admin route", async () => {
+    const proxy = await getProxy();
+    getTokenMock.mockResolvedValueOnce({
+      userId: "sarah",
+      familyId: "fam-1",
+      role: "child",
+    });
+
+    const response = await proxy(makeRequest("/admin"));
+    expectRedirect(response, "/planner");
+  });
+
   it("redirects unauthenticated requests when token is missing", async () => {
     const proxy = await getProxy();
     getTokenMock.mockResolvedValueOnce(null);
@@ -128,6 +160,19 @@ describe("school-lunch proxy in real-auth mode", () => {
     const response = await proxy(makeRequest("/school-lunch/child"));
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("redirects users marked mustChangePassword", async () => {
+    const proxy = await getProxy();
+    getTokenMock.mockResolvedValueOnce({
+      userId: "mom",
+      familyId: "fam-1",
+      role: "adult",
+      mustChangePassword: true,
+    });
+
+    const response = await proxy(makeRequest("/planner"));
+    expectRedirect(response, "/account");
   });
 });
 

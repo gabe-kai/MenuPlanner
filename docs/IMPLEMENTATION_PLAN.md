@@ -321,7 +321,7 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
   - Remove mock session-switch override from production shell.
   - Document a cutover checklist and rollback strategy in docs.
   - Switched real-mode login shell to username/password input (mock-selector retained in non-real mode).
-- [ ] Cutover checklist (to run when real auth provider is ready):
+- [x] Cutover checklist (to run when real auth provider is ready):
   - switch `NEXT_PUBLIC_USE_REAL_AUTH` only via deployment environment,
   - remove seeded identity assumptions from login shell for production users (implemented with username/password real-mode entry),
   - keep mock auth paths intact for local development,
@@ -330,7 +330,7 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 - [x] Registration payload contract decision:
   - Keep `/api/auth/register` payload limited to `userId`, `name`, `role`, `password`, and optional `familyId`.
   - `editPolicy` remains derived from app/family policy, not user-provided at registration time.
-- [ ] Validation pass:
+- [x] Validation pass:
   - [x] Execute full existing suite first (`npm test -- --runInBand`).
   - [x] Run proxy tests for missing/invalid/expired sessions.
   - [x] Add one manual verification: sign in as child/adult and confirm route boundary behavior end-to-end.
@@ -448,6 +448,10 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
     - edit user role/family assignment,
     - update family metadata and policy defaults,
     - override child school-lunch/planner state for support/debug use.
+- Add registration onboarding and family namespace improvements (next pass):
+  - Allow creating a new family versus joining an existing one at registration.
+  - Capture family display names rather than only raw identifiers for user-facing flows.
+  - Add admin bootstrap support so the first admin can own a dedicated first family and seed initial user families separately.
 - Add admin audit:
   - Add structured log events for admin actions and previous/new values.
   - Log actor, target, and operation context (userId/familyId/planId/resourceId).
@@ -469,13 +473,28 @@ This plan breaks implementation into vertical phases for use with Cursor AI. Eac
 
 ### Implementation checklist (execution-ready)
 
-- [ ] Add admin capability in auth/session identity model.
-- [ ] Protect `/admin/*` in route proxy with explicit admin actor checks.
-- [ ] Build admin dashboard entry and base list views for users/families.
-- [ ] Add read-only cross-entity admin views for recipes/planner/school-lunch.
-- [ ] Add first-stage cross-entity mutation actions with confirmation.
-- [ ] Add audit events for admin mutation paths.
-- [ ] Add focused admin policy/test coverage.
+- [x] Add admin capability in auth/session identity model.
+- [x] Protect `/admin/*` in route proxy with explicit admin actor checks.
+- [x] Build admin dashboard entry and base list views for users/families.
+- [x] Add read-only cross-entity admin views for recipes/planner/school-lunch.
+- [x] Add first-stage cross-entity mutation actions with confirmation.
+- [x] Add audit events for admin mutation paths.
+- [x] Add focused admin policy/test coverage.
+- [x] Add registration flow to choose family onboarding mode:
+  - "create new family" vs "join existing family".
+  - support family name fields for all new family creation paths.
+- [x] Add admin family bootstrap controls:
+  - create/rename/delete families from admin panel.
+  - grant admin a dedicated family and support first-user family seeding migration from `fam-1`.
+- [x] Add admin directory sync from real-auth source so users/families views show persisted identities.
+- [x] Add admin user management actions:
+  - force password-reset-on-next-login for any user.
+  - assign optional temporary one-time password during reset.
+  - delete user identities from admin actions.
+- [x] Stabilize admin middleware route definition for Next.js edge runtime compatibility:
+  - Export `middleware` as the default export from `middleware.ts` with a local static `config` object.
+  - Remove Node-only imports from middleware path (no `node:` builtins, no Prisma/authIdentity server modules).
+- [x] Stabilize `proxy-real-auth` behavior tests without requiring DB-backed Prisma initialization.
 
 ---
 

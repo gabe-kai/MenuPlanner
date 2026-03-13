@@ -1,6 +1,7 @@
 import type { ChildEditPolicy, Membership, User, FamilyGroup } from "@/stores/authAndFamilyStore";
 import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 import { getDemoActorByUserId } from "@/lib/auth/demoIdentity";
+import { isSystemAdminUser } from "@/lib/auth/adminAuth";
 
 export interface SessionActor {
   user: User;
@@ -9,6 +10,8 @@ export interface SessionActor {
   userId: string;
   familyId: string;
   isAdult: boolean;
+  isAdmin: boolean;
+  mustChangePassword?: boolean;
   editPolicy: ChildEditPolicy;
 }
 
@@ -33,18 +36,31 @@ export function getActorFromStoreState(
   families: readonly FamilyGroup[],
   memberships: readonly Membership[],
 ): SessionActor | null {
-  if (userId === null) return null;
-  const user = users.find((candidate) => candidate.id === userId);
+  const normalizedUserId = typeof userId === "string" ? userId.trim().toLowerCase() : "";
+  const normalizedFamilyId = typeof familyId === "string" ? familyId.trim() : null;
+  if (!normalizedUserId) return null;
+
+  const user = users.find((candidate) => candidate.id === normalizedUserId);
   if (!user) {
-    return getDemoActorByUserId(userId, familyId);
+    const demoActor = getDemoActorByUserId(normalizedUserId, normalizedFamilyId);
+    if (!demoActor) return null;
+    return {
+      ...demoActor,
+      isAdmin: isSystemAdminUser(normalizedUserId),
+    };
   }
 
-  const targetFamilyId = familyId ?? memberships.find((m) => m.userId === user.id)?.familyId;
+  const targetFamilyId = normalizedFamilyId ?? memberships.find((m) => m.userId === user.id)?.familyId;
   if (!targetFamilyId) return null;
 
   const family = families.find((candidate) => candidate.id === targetFamilyId);
   if (!family) {
-    return getDemoActorByUserId(userId, familyId);
+    const demoActor = getDemoActorByUserId(normalizedUserId, targetFamilyId);
+    if (!demoActor) return null;
+    return {
+      ...demoActor,
+      isAdmin: isSystemAdminUser(normalizedUserId),
+    };
   }
 
   const membership = findMembershipByUserId(
@@ -52,16 +68,21 @@ export function getActorFromStoreState(
     user.id,
     targetFamilyId,
   );
-  if (!membership && userId && (user.role === "adult" || user.role === "child")) {
-    const demoActor = getDemoActorByUserId(userId, targetFamilyId);
-    if (demoActor) return demoActor;
+  if (!membership && (user.role === "adult" || user.role === "child")) {
+    const demoActor = getDemoActorByUserId(normalizedUserId, targetFamilyId);
+    if (!demoActor) return null;
+    return {
+      ...demoActor,
+      isAdmin: isSystemAdminUser(normalizedUserId),
+    };
   }
   return {
     user,
     family,
-    userId: user.id,
+    userId: normalizedUserId,
     familyId: targetFamilyId,
     isAdult: user.role === "adult",
+    isAdmin: isSystemAdminUser(normalizedUserId),
     editPolicy: membership?.editPolicy ?? DEFAULT_EDIT_POLICY,
     ...(membership ? { membership } : {}),
   };

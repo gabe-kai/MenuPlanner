@@ -6,6 +6,7 @@ import {
   getAuthEditPolicyForUser,
   getAuthIdentityByUserId,
 } from "@/lib/auth/authIdentity.server";
+import { getSystemRoleForUser } from "@/lib/auth/adminAuth";
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -36,6 +37,8 @@ export async function POST() {
     expiresAt,
     name: identity.name,
     role: identity.role,
+    systemRole: getSystemRoleForUser(userId),
+    mustChangePassword: identity.mustChangePassword,
     editPolicy,
   };
 

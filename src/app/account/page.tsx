@@ -16,6 +16,7 @@ type AccountProfile = {
   familyId: string;
   role: "adult" | "child";
   editPolicy?: "free" | "approval_required" | "no_edit";
+  mustChangePassword?: boolean;
 };
 
 type MessageKind = "idle" | "error" | "success";
@@ -168,6 +169,9 @@ export default function AccountPage() {
         setCurrentPassword("");
         setNextPassword("");
         setConfirmPassword("");
+        setProfile((previous) =>
+          previous === null ? previous : { ...previous, mustChangePassword: false },
+        );
       } else {
         setPasswordMessage({ kind: "error", text: "Password update failed." });
       }
@@ -190,6 +194,11 @@ export default function AccountPage() {
     <div className="space-y-6">
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight">Account settings</h2>
+        {profile.mustChangePassword ? (
+          <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs text-amber-200">
+            Password change required for this account on first login.
+          </p>
+        ) : null}
         <p className="text-sm text-slate-400">
           Manage your profile and account-level options.
         </p>

@@ -17,6 +17,7 @@ import { DEMO_AUTH_PASSWORD } from "@/lib/auth/demoIdentity";
 export interface ActiveSessionState {
   userId: string | null;
   familyId: string | null;
+  systemRole: "admin" | "user" | null;
   isAuthenticated: boolean;
 }
 
@@ -25,6 +26,7 @@ export function getActiveSession(): ActiveSessionState {
   return {
     userId: state.currentUserId,
     familyId: state.currentFamilyId,
+    systemRole: state.currentSystemRole,
     isAuthenticated: state.isAuthenticated,
   };
 }
@@ -48,6 +50,7 @@ export async function hydrateSessionFromStorage() {
       if (!useRealAuth) {
         writeSessionCookie(persisted);
       }
+      state.setCurrentSystemRole(useRealAuth ? persisted.systemRole ?? null : null);
       return;
     }
     log.warn({
@@ -63,6 +66,7 @@ export async function hydrateSessionFromStorage() {
     state.setCurrentUser(null);
     state.setCurrentFamilyId(null);
     state.setIsAuthenticated(false);
+    state.setCurrentSystemRole(null);
     if (!useRealAuth) {
       clearSessionCookie();
     }
@@ -86,6 +90,7 @@ export async function hydrateSessionFromStorage() {
     state.setCurrentUser(null);
     state.setCurrentFamilyId(null);
     state.setIsAuthenticated(false);
+    state.setCurrentSystemRole(null);
   }
   if (!useRealAuth) {
     clearSessionCookie();
@@ -213,6 +218,7 @@ export async function signOutUser() {
   state.setCurrentUser(null);
   state.setCurrentFamilyId(null);
   state.setIsAuthenticated(false);
+  state.setCurrentSystemRole(null);
   if (!useRealAuth) {
     clearSessionCookie();
   }
@@ -262,5 +268,6 @@ function applySession(session: AuthSessionRecord) {
   state.setCurrentUser(session.userId);
   state.setCurrentFamilyId(session.familyId);
   state.setIsAuthenticated(true);
+  state.setCurrentSystemRole(useRealAuth ? session.systemRole ?? null : null);
   return true;
 }

@@ -14,6 +14,7 @@ jest.mock("next-auth", () => ({
   getServerSession: jest.fn(async () => null),
 }));
 
+import type { NextRequest } from "next/server";
 import { encodeSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth/sessionCookie";
 import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 
@@ -46,11 +47,6 @@ function buildRequestCookie(userId: string, familyId: string) {
   return cookieValue;
 }
 
-type MockPolicyRequest = {
-  json: () => Promise<{ userId: string; editPolicy: string }>;
-  cookies: { get: (name: string) => { value: string } | undefined };
-};
-
 function buildRequest(payload: { userId: string; editPolicy: string }, cookie: string) {
   return {
     async json() {
@@ -64,7 +60,7 @@ function buildRequest(payload: { userId: string; editPolicy: string }, cookie: s
         return undefined;
       },
     },
-  } as unknown as MockPolicyRequest;
+  } as unknown as NextRequest;
 }
 
 describe("auth policy endpoint", () => {

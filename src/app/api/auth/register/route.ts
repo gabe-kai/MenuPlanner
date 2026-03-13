@@ -8,12 +8,22 @@ type RegisterPayload = {
   name: string;
   role: "adult" | "child";
   password: string;
+  familyMode?: "create" | "join";
   familyId?: string;
+  familyName?: string;
 };
 
 export async function POST(request: NextRequest) {
   const payload = (await request.json().catch(() => null)) as RegisterPayload | null;
-  const allowedKeys = ["userId", "name", "role", "password", "familyId"];
+  const allowedKeys = [
+    "userId",
+    "name",
+    "role",
+    "password",
+    "familyMode",
+    "familyId",
+    "familyName",
+  ];
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
     const unexpectedKeys = Object.keys(payload).filter((key) => !allowedKeys.includes(key));
     if (unexpectedKeys.length > 0) {
@@ -40,6 +50,10 @@ export async function POST(request: NextRequest) {
   if (payload.password.length === 0) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
+  const familyMode = payload.familyMode === "create" ? "create" : "join";
+  if (familyMode === "create" && typeof payload.familyName !== "string") {
+    return NextResponse.json({ error: "familyName required" }, { status: 400 });
+  }
 
   const normalizedUserId = trimmedUserId.toLowerCase();
   const result = await registerAuthIdentity({
@@ -47,6 +61,8 @@ export async function POST(request: NextRequest) {
     name: payload.name.trim(),
     role: payload.role,
     password: payload.password,
+    familyMode,
+    ...(typeof payload.familyName === "string" ? { familyName: payload.familyName } : {}),
     ...(typeof payload.familyId === "string" ? { familyId: payload.familyId } : {}),
   });
 
@@ -55,6 +71,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.reason }, { status });
   }
 
-  return NextResponse.json({ ok: true, userId: result.userId });
+  return NextResponse.json({
+    ok: true,
+    userId: result.userId,
+    familyId: result.familyId,
+    ...(typeof payload.familyName === "string" ? { familyName: payload.familyName } : {}),
+  });
 }
 

@@ -4,8 +4,8 @@ import { getToken } from "next-auth/jwt";
 import { useRealAuth } from "@/lib/auth/authGateway";
 import { parseSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth/sessionCookie";
 import { getActorFromStoreState } from "@/lib/auth/actors";
+import { isSystemAdminUser } from "@/lib/auth/adminAuth";
 import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
-import { log } from "@/lib/log";
 
 function isSchoolLunchRoute(pathname: string) {
   return pathname === "/school-lunch" || pathname.startsWith("/school-lunch/");
@@ -19,6 +19,18 @@ function isAccountRoute(pathname: string) {
   return pathname === "/account";
 }
 
+function isPlannerRoute(pathname: string) {
+  return pathname === "/planner";
+}
+
+function isRecipesRoute(pathname: string) {
+  return pathname === "/recipes" || pathname.startsWith("/recipes/");
+}
+
+function isAdminRoute(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 async function getActorFromSession(request: NextRequest, sessionCookie: string | undefined) {
   const state = useAuthAndFamilyStore.getState();
   if (useRealAuth) {
@@ -27,19 +39,19 @@ async function getActorFromSession(request: NextRequest, sessionCookie: string |
     const tokenFamilyId = typeof token?.familyId === "string" ? token.familyId : null;
     const tokenRole =
       token?.role === "adult" || token?.role === "child" ? token.role : null;
+    const mustChangePassword =
+      token?.mustChangePassword === true || token?.mustChangePassword === false ? token.mustChangePassword : false;
 
     if (!tokenUserId || !tokenFamilyId) {
       if (token) {
-        log.warn({
-          module: "auth",
-          message: "auth.tokenInvalid",
-          data: { reason: "next_auth_token_missing_claims" },
-        });
+        // eslint-disable-next-line no-console
+        console.warn("auth.tokenInvalid: next_auth_token_missing_claims");
       }
       return null;
     }
 
     if (tokenRole) {
+      const isAdmin = isSystemAdminUser(tokenUserId);
       const tokenName =
         typeof token?.name === "string" && token.name.trim().length > 0
           ? token.name
@@ -58,7 +70,9 @@ async function getActorFromSession(request: NextRequest, sessionCookie: string |
         userId: tokenUserId,
         familyId: tokenFamilyId,
         isAdult: tokenRole === "adult",
+        isAdmin,
         editPolicy: "free",
+        mustChangePassword,
       };
     }
 
@@ -71,25 +85,22 @@ async function getActorFromSession(request: NextRequest, sessionCookie: string |
     );
     if (!actor) {
       if (token) {
-        log.warn({
-          module: "auth",
-          message: "auth.tokenInvalid",
-          data: { reason: "next_auth_token_invalid" },
-        });
+        // eslint-disable-next-line no-console
+        console.warn("auth.tokenInvalid: next_auth_token_invalid");
       }
       return null;
     }
-    return actor;
+    return {
+      ...actor,
+      mustChangePassword,
+    };
   }
 
   const actor = parseSessionCookie(sessionCookie);
   if (!actor) {
     if (sessionCookie) {
-      log.warn({
-        module: "auth",
-        message: "auth.tokenInvalid",
-        data: { reason: "invalid_or_expired_session_cookie" },
-      });
+      // eslint-disable-next-line no-console
+      console.warn("auth.tokenInvalid: invalid_or_expired_session_cookie");
     }
     return null;
   }
@@ -104,7 +115,13 @@ async function getActorFromSession(request: NextRequest, sessionCookie: string |
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (!isSchoolLunchRoute(pathname) && !isAccountRoute(pathname)) {
+  if (
+    !isSchoolLunchRoute(pathname) &&
+    !isAccountRoute(pathname) &&
+    !isAdminRoute(pathname) &&
+    !isPlannerRoute(pathname) &&
+    !isRecipesRoute(pathname)
+  ) {
     return NextResponse.next();
   }
 
@@ -112,9 +129,22 @@ export async function proxy(request: NextRequest) {
   const actor = await getActorFromSession(request, sessionCookie);
 
   if (!actor) {
+    // eslint-disable-next-line no-console
+    console.warn("auth.sessionMissing", pathname);
     const login = new URL("/login", request.url);
     login.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(login);
+  }
+
+  if (isAdminRoute(pathname) && !actor.isAdmin) {
+    // eslint-disable-next-line no-console
+    console.warn("auth.nonAdminRedirect", pathname, actor.userId);
+    return NextResponse.redirect(new URL("/planner", request.url));
+  }
+  if (!isAccountRoute(pathname) && actor.mustChangePassword) {
+    // eslint-disable-next-line no-console
+    console.info("auth.mustChangePasswordRedirect", pathname, actor.userId);
+    return NextResponse.redirect(new URL("/account", request.url));
   }
 
   if (isAdultRoute(pathname) && !actor.isAdult) {
@@ -125,5 +155,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/school-lunch/:path*", "/account"],
+  matcher: [
+    "/school-lunch/:path*",
+    "/account",
+    "/admin/:path*",
+    "/planner",
+    "/recipes",
+    "/recipes/:path*",
+  ],
 };

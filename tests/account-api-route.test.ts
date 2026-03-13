@@ -17,6 +17,7 @@ jest.mock("@/lib/auth/authGateway", () => ({
   useRealAuth: false,
 }));
 
+import type { NextRequest } from "next/server";
 import { encodeSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth/sessionCookie";
 import { GET, PUT } from "@/app/api/auth/me/route";
 import { POST } from "@/app/api/auth/me/password/route";
@@ -71,7 +72,7 @@ function buildRequestCookie(userId: string, familyId: string) {
     async json() {
       return { name: "Family Mom" };
     },
-  } as unknown as { cookies: { get: (name: string) => { value: string } | undefined }; json: () => Promise<unknown> };
+  } as unknown as NextRequest;
 }
 
 describe("account API endpoints", () => {
@@ -89,7 +90,7 @@ describe("account API endpoints", () => {
     const response = await GET({
       cookies: { get: () => undefined },
       json: async () => ({}),
-    } as unknown as { cookies: { get: (name: string) => undefined | { value: string } }; json: () => Promise<object> });
+    } as unknown as NextRequest);
 
     expect(response.status).toBe(401);
   });
@@ -129,7 +130,7 @@ describe("account API endpoints", () => {
       {
         ...buildRequestCookie("mom", "fam-1"),
         json: async () => ({ name: "Mama" }),
-      } as unknown as { cookies: { get: (name: string) => { value: string } | undefined }; json: () => Promise<object> },
+      } as unknown as NextRequest,
     );
     const body = (await response.json()) as { ok: boolean };
 
@@ -146,7 +147,7 @@ describe("account API endpoints", () => {
       {
         ...buildRequestCookie("mom", "fam-1"),
         json: async () => ({ name: "   " }),
-      } as unknown as { cookies: { get: (name: string) => { value: string } | undefined }; json: () => Promise<object> },
+      } as unknown as NextRequest,
     );
     expect(response.status).toBe(400);
   });
@@ -164,7 +165,7 @@ describe("account API endpoints", () => {
           currentPassword: "bad",
           nextPassword: "new-password",
         }),
-      } as unknown as { cookies: { get: (name: string) => { value: string } | undefined }; json: () => Promise<object> },
+      } as unknown as NextRequest,
     );
 
     expect(response.status).toBe(403);

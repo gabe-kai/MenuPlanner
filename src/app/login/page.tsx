@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, type FormEvent, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useRealAuth } from "@/lib/auth/authGateway";
 import { DEMO_AUTH_PASSWORD } from "@/lib/auth/demoIdentity";
@@ -23,7 +23,8 @@ function LoginPageContent() {
     [users, selectedUserId],
   );
 
-  const handleSignIn = async () => {
+  const handleSignIn = async (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
     const targetUserId = useRealAuth ? username.trim().toLowerCase() : selectedUser?.id;
     if (!targetUserId) {
       setErrorMessage("Sign in failed. Please provide a username.");
@@ -37,6 +38,10 @@ function LoginPageContent() {
         : await signInUser(targetUserId);
       if (!session) {
         throw new Error("Unable to complete sign in");
+      }
+      if (session.mustChangePassword) {
+        router.push("/account");
+        return;
       }
       const redirectTo = searchParams.get("redirectTo");
       router.push(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/planner");
@@ -66,6 +71,12 @@ function LoginPageContent() {
 
   return (
     <div className="space-y-4">
+      <form
+        onSubmit={(event) => {
+          void handleSignIn(event);
+        }}
+        className="space-y-4"
+      >
       <h2 className="text-lg font-semibold tracking-tight">Sign in</h2>
       <p className="text-sm text-slate-400">
         {useRealAuth
@@ -118,8 +129,7 @@ function LoginPageContent() {
       ) : null}
 
       <button
-        type="button"
-        onClick={handleSignIn}
+        type="submit"
         disabled={isSubmitting}
         className="rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-600"
       >
@@ -133,6 +143,7 @@ function LoginPageContent() {
           </Link>
         </p>
       ) : null}
+      </form>
     </div>
   );
 }
