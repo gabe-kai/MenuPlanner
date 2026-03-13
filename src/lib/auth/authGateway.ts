@@ -6,6 +6,8 @@ export interface AuthSessionRecord {
   name?: string;
   role?: "adult" | "child";
   editPolicy?: "free" | "approval_required" | "no_edit";
+  systemRole?: "admin" | "user";
+  mustChangePassword?: boolean;
   issuedAt?: number;
   expiresAt?: number;
 }

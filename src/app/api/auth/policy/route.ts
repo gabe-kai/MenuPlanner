@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth/nextAuth";
 import { parseSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth/sessionCookie";
 import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 import { useRealAuth } from "@/lib/auth/authGateway";
+import { isSystemAdminUser } from "@/lib/auth/adminAuth";
 import {
   getAuthEditPolicyForUser,
   getAuthIdentityByUserId,
@@ -25,6 +26,7 @@ type RequestActor = {
   userId: string;
   familyId: string;
   role: "adult";
+  isAdmin: boolean;
 };
 
 function isChildEditPolicy(raw: string): raw is ChildEditPolicy {
@@ -38,10 +40,11 @@ async function getRequestActor(request: NextRequest): Promise<RequestActor | nul
     const userId = session?.user && (session.user as { id?: string }).id;
     const familyId = session?.user && (session.user as { familyId?: string }).familyId;
     const role = session?.user && (session.user as { role?: string }).role;
-    if (!userId || !familyId || role !== "adult") {
+    const isAdmin = isSystemAdminUser(userId);
+    if (!userId || !familyId || (role !== "adult" && !isAdmin)) {
       return null;
     }
-    return { userId, familyId, role: "adult" };
+    return { userId, familyId, role: "adult", isAdmin };
   }
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -56,16 +59,23 @@ async function getRequestActor(request: NextRequest): Promise<RequestActor | nul
     state.memberships,
   );
   if (!actor || !actor.isAdult) return null;
-  return { userId: actor.user.id, familyId: actor.family.id, role: "adult" };
+  return { userId: actor.user.id, familyId: actor.family.id, role: "adult", isAdmin: actor.isAdmin };
 }
 
-async function getChildTargetForPolicyUpdate(actorFamilyId: string, targetUserId: string) {
+async function getChildTargetForPolicyUpdate(
+  actorFamilyId: string,
+  targetUserId: string,
+  actorIsAdmin: boolean,
+) {
   const normalizedTargetUserId = targetUserId.trim().toLowerCase();
   if (!normalizedTargetUserId) return null;
 
   if (useRealAuth) {
     const identity = await getAuthIdentityByUserId(normalizedTargetUserId);
-    if (!identity || identity.familyId !== actorFamilyId || identity.role !== "child") {
+    if (!identity || identity.role !== "child") {
+      return null;
+    }
+    if (!actorIsAdmin && identity.familyId !== actorFamilyId) {
       return null;
     }
     return {
@@ -77,12 +87,15 @@ async function getChildTargetForPolicyUpdate(actorFamilyId: string, targetUserId
   const state = useAuthAndFamilyStore.getState();
   const actor = getActorFromStoreState(
     normalizedTargetUserId,
-    actorFamilyId,
+    actorIsAdmin ? null : actorFamilyId,
     state.users,
     state.families,
     state.memberships,
   );
-  if (!actor || actor.user.role !== "child" || actor.familyId !== actorFamilyId) {
+  if (!actor || actor.user.role !== "child") {
+    return null;
+  }
+  if (!actorIsAdmin && actor.familyId !== actorFamilyId) {
     return null;
   }
 
@@ -106,7 +119,11 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const target = await getChildTargetForPolicyUpdate(actor.familyId, payload.userId);
+  const target = await getChildTargetForPolicyUpdate(
+    actor.familyId,
+    payload.userId,
+    actor.isAdmin,
+  );
   if (!target) {
     return NextResponse.json({ error: "target unavailable" }, { status: 400 });
   }

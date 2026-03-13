@@ -30,9 +30,9 @@ function resetAuthAndPlans() {
       days: plan.days.map((day) => ({
         ...day,
         choice: "home",
-        pendingChoice: undefined,
         approved: false,
-        approvalNote: undefined,
+        ...(day.pendingChoice === undefined ? {} : { pendingChoice: day.pendingChoice }),
+        ...(day.approvalNote === undefined ? {} : { approvalNote: day.approvalNote }),
       })),
     })),
   });
@@ -86,16 +86,26 @@ describe("Child school-lunch page", () => {
 
     render(<ChildSchoolLunchPage />);
     const firstDaySelect = getDaySelects()[0];
+    if (!firstDaySelect) {
+      throw new Error("Expected at least one child day select");
+    }
     fireEvent.change(firstDaySelect, { target: { value: "school" } });
 
     const plan = useSchoolLunchStore
       .getState()
       .plans.find((item) => item.childId === "sarah");
+    if (!plan) {
+      throw new Error("Expected sarah plan");
+    }
     expect(plan).toBeDefined();
-    expect(plan?.days[0].choice).toBe("home");
-    expect(plan?.days[0].pendingChoice).toBe("school");
-    expect(plan?.days[0].approved).toBe(false);
-    expect(plan?.days[0].approvalNote).toBe("Pending adult approval");
-    expect(plan?.status).toBe("changes_requested");
+    const day = plan.days[0];
+    if (!day) {
+      throw new Error("Expected first day");
+    }
+    expect(day.choice).toBe("home");
+    expect(day.pendingChoice).toBe("school");
+    expect(day.approved).toBe(false);
+    expect(day.approvalNote).toBe("Pending adult approval");
+    expect(plan.status).toBe("changes_requested");
   });
 });

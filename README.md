@@ -87,6 +87,7 @@ _Implementation is being brought up in phases. Commands below are already availa
   - `NEXT_PUBLIC_DEMO_AUTH_PASSWORD` / `NEXTAUTH_DEMO_PASSWORD` for fallback password.
   - `NEXTAUTH_URL` for deployed host and callback configuration.
   - `NEXTAUTH_TRUST_HOST` when behind a proxy.
+  - `MENU_ADMIN_USER_IDS` for explicit admin grant IDs.
 
 For local real-auth bootstrap and ongoing onboarding, users can:
 - Open the in-app registration page at `/register`, or
@@ -112,6 +113,10 @@ These now write to the local Prisma auth database (SQLite by default).
 - `/api/auth/refresh` – Real-auth session renewal endpoint.
 - `/api/auth/policy` – Authorized admin endpoint to update child `editPolicy`.
 - `/api/auth/register` – Register a username/password/role in the local Prisma auth store (development bootstrap).
+- `/account` – Authenticated user account settings and password update.
+- `/admin` – Protected admin dashboard for user/family overview.
+- `/admin/users` – Admin users directory listing.
+- `/admin/families` – Admin families directory listing.
 - `/api/auth/[...nextauth]` – NextAuth.js provider bootstrap (credentials flow) and session machinery.
 
 ### Auth & route protection (Phase 3.5)

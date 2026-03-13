@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { log } from "@/lib/log";
+import { getSystemRoleForUser, isSystemAdminUser } from "@/lib/auth/adminAuth";
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
 type AuthOptions = NextAuthOptions & { trustHost?: boolean };
@@ -55,6 +56,8 @@ export const authOptions: AuthOptions = {
           email: `${identity.userId}@menuplanner.local`,
           role: identity.role,
           familyId: identity.familyId,
+          systemRole: getSystemRoleForUser(identity.userId),
+          mustChangePassword: identity.mustChangePassword,
         };
       },
     }),
@@ -74,6 +77,18 @@ export const authOptions: AuthOptions = {
         token.userId = user.id;
         token.familyId = (user as { familyId?: string }).familyId ?? null;
         token.role = (user as { role?: string }).role ?? null;
+        const userSystemRole = (user as { systemRole?: string }).systemRole;
+        if (typeof userSystemRole === "string") {
+          token.systemRole = userSystemRole;
+        } else if (token.userId) {
+          token.systemRole = isSystemAdminUser(token.userId as string) ? "admin" : "user";
+        }
+        const userMustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword;
+        if (userMustChangePassword === true) {
+          token.mustChangePassword = true;
+        } else if (userMustChangePassword === false) {
+          token.mustChangePassword = false;
+        }
       }
       return token;
     },
@@ -88,6 +103,8 @@ export const authOptions: AuthOptions = {
           id?: string;
           familyId?: string;
           role?: string;
+          systemRole?: "admin" | "user";
+          mustChangePassword?: boolean;
         };
         sessionUser.id = token.userId as string;
         if (typeof token.familyId === "string") {
@@ -95,6 +112,17 @@ export const authOptions: AuthOptions = {
         }
         if (typeof token.role === "string") {
           sessionUser.role = token.role;
+        }
+        if (token.systemRole === "admin" || token.systemRole === "user") {
+          sessionUser.systemRole = token.systemRole;
+        } else if (token.userId) {
+          sessionUser.systemRole = isSystemAdminUser(token.userId as string) ? "admin" : "user";
+        }
+
+        if (typeof token.mustChangePassword === "boolean") {
+          sessionUser.mustChangePassword = token.mustChangePassword;
+        } else {
+          sessionUser.mustChangePassword = false;
         }
       }
       return session;

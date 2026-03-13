@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const push = jest.fn();
 const signInUser = jest.fn();
+const mockedFetch: jest.MockedFunction<typeof fetch> = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
@@ -29,9 +30,8 @@ jest.mock("@/lib/auth/session", () => ({
 const mockResponse = (payload: unknown, ok = true) =>
   ({ ok, json: async () => payload } as Response);
 
-const mockedFetch = jest.fn() as unknown as typeof fetch;
 Object.defineProperty(globalThis, "fetch", {
-  value: mockedFetch,
+  value: mockedFetch as typeof fetch,
   configurable: true,
   writable: true,
 });

@@ -19,6 +19,7 @@ model AuthUser {
   role         AuthUserRole
   familyId     String       @default("fam-1")
   passwordHash String
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }

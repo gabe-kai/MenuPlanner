@@ -48,7 +48,7 @@ describe("Adult school-lunch page", () => {
     });
     if (hideDetailsButtons.length === 0) {
       fireEvent.click(
-        screen.getAllByRole("button", { name: /show details/i })[0],
+        screen.getAllByRole("button", { name: /show details/i })[0]!,
       );
     }
   }
@@ -69,41 +69,55 @@ describe("Adult school-lunch page", () => {
     render(<AdultSchoolLunchPage />);
     openFirstChildDetails();
 
-    fireEvent.change(screen.getAllByRole("combobox")[0], {
+    fireEvent.change(screen.getAllByRole("combobox")[0]!, {
       target: { value: "school" },
     });
-    fireEvent.click(screen.getAllByRole("button", { name: /^approve$/i })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: /^approve$/i })[0]!);
 
     const plan = useSchoolLunchStore
       .getState()
       .plans.find((item) => item.childId === "sarah");
 
     expect(plan).toBeDefined();
-    expect(plan?.days[0].choice).toBe("school");
-    expect(plan?.days[0].approved).toBe(true);
-    expect(plan?.status).toBe("approved");
-    expect(plan?.days[0].approvalNote).toBe("Approved");
+    if (!plan) {
+      throw new Error("Expected sarah plan");
+    }
+    const day = plan.days[0];
+    if (!day) {
+      throw new Error("Expected a sarah day");
+    }
+    expect(day.choice).toBe("school");
+    expect(day.approved).toBe(true);
+    expect(plan.status).toBe("approved");
+    expect(day.approvalNote).toBe("Approved");
   });
 
   it("rejects child day with per-day note", () => {
     render(<AdultSchoolLunchPage />);
     openFirstChildDetails();
 
-    fireEvent.change(screen.getAllByRole("combobox")[0], {
+    fireEvent.change(screen.getAllByRole("combobox")[0]!, {
       target: { value: "school" },
     });
-    fireEvent.change(screen.getAllByRole("textbox")[0], {
+    fireEvent.change(screen.getAllByRole("textbox")[0]!, {
       target: { value: "Lunch box not ready" },
     });
-    fireEvent.click(screen.getAllByRole("button", { name: /^reject$/i })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: /^reject$/i })[0]!);
 
     const plan = useSchoolLunchStore
       .getState()
       .plans.find((item) => item.childId === "sarah");
 
     expect(plan).toBeDefined();
-    expect(plan?.days[0].approved).toBe(false);
-    expect(plan?.days[0].approvalNote).toBe("Lunch box not ready");
-    expect(plan?.status).toBe("changes_requested");
+    if (!plan) {
+      throw new Error("Expected sarah plan");
+    }
+    const day = plan.days[0];
+    if (!day) {
+      throw new Error("Expected a sarah day");
+    }
+    expect(day.approved).toBe(false);
+    expect(day.approvalNote).toBe("Lunch box not ready");
+    expect(plan.status).toBe("changes_requested");
   });
 });

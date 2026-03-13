@@ -1,14 +1,50 @@
-feat: finish phase 3.8 account self-service and green local validation
+Phase 3.9 – Admin Console & Cross-Entity Management
 
-- Added `/account` self-service surface with authenticated load/save profile flow and password rotation.
-- Added guarded account APIs:
-  - `GET /api/auth/me` for authenticated profile snapshot,
-  - `PUT /api/auth/me` for display-name updates,
-  - `POST /api/auth/me/password` for current-password-required rotation.
-- Added `Session`-anchored settings route protection via proxy middleware and header navigation entry.
-- Added focused account API and page tests (`tests/account-api-route.test.ts`, `tests/account-page.test.tsx`).
-- Added auth/service typing fixes and a lint cleanup pass for strict TS compatibility (`AuthOptions` typing, account service helpers, store strip-helper cleanup).
-- Updated ESLint tooling to a runnable configuration with current dependency set and validated:
-  - `npm test -- --runInBand`
-  - `npm run lint`
-  - `npm run build`
+Implemented full phase 3.9 completion for admin directory sync and mutating admin actions.
+
+- Added real-auth admin directory API and auth-guarded actor checks.
+  - New `GET /api/admin/directory` route with centralized actor validation.
+  - Directory payload now includes authoritative users, families, edit policies, and password-reset flags.
+- Extended auth identity services (`src/lib/auth/authIdentity.server.ts`) for admin operations:
+  - Added admin identity exports: `listAuthIdentities`, `listAuthFamilies`.
+  - Added family metadata/state helpers and persistence helpers for family naming.
+  - Added `createAuthFamily`, `setAuthFamilyName`, and `setAuthIdentityFamily`.
+  - Added `setAuthIdentityTemporaryPassword`, `setPasswordChangeRequired`, and `deleteAuthIdentity`.
+  - Kept password update semantics aligned so admin-initiated resets always set `mustChangePassword`.
+- Implemented admin-user management routes:
+  - `POST /api/admin/users/[userId]/reset` to force password-reset behavior and optional temporary password.
+  - `DELETE /api/admin/users/[userId]` to delete identities (self-delete blocked).
+  - `PATCH /api/admin/users/[userId]/family` to move users across families.
+- Implemented admin-family management routes:
+  - `POST /api/admin/families` to create families.
+  - `PATCH /api/admin/families/[familyId]` to rename families.
+- Updated admin UI pages to consume real-auth admin directory and persist actions:
+  - `src/app/admin/users/page.tsx`
+    - Added directory sync via `/api/admin/directory`.
+    - Added password-reset status column and reset/delete buttons.
+    - Added API-backed reset/delete flows in real-auth mode.
+  - `src/app/admin/families/page.tsx`
+    - Added directory sync via `/api/admin/directory`.
+    - Added real-auth create/rename/bootstrap/seed flows for families.
+    - Added real-auth move flows for user migration from `fam-1`.
+- Added admin mutation audit logs for all new admin actions in logs module.
+- Updated implementation plan completion notes to reflect new 3.9 work.
+
+Additional stabilization work in this commit for release readiness:
+- Completed Next.js 15+ middleware hardening for edge runtime:
+  - `middleware.ts` now exports `proxy` as the default export and defines a local static `config` matcher.
+  - `src/proxy.ts` no longer imports Node-only modules (`src/lib/auth/authIdentity.server` and Node-dependent logging imports) in the edge execution path.
+  - Must-change-password enforcement now relies on session token claims during middleware checks.
+- Hardened middleware logging and auth token handling:
+  - Replaced structured logger calls in middleware with edge-safe console diagnostics.
+  - Fixed invalid actor handling path in proxy session parsing/redirect logic.
+- Improved runtime compatibility in logging and auth helpers:
+  - Updated `src/lib/log.ts` to avoid startup Edge incompatibilities from Node-only process/path usage during module init.
+  - Fixed family ID set construction in `src/lib/auth/authIdentity.server.ts` (`createAuthFamily`) to avoid `Set<string>` map/type regression.
+- Cleanup and quality cleanup:
+  - Removed unused `currentSystemRole` selector usage from `src/components/SiteShell.tsx`.
+  - Added `middleware.ts` to TypeScript lint project include set (`tsconfig.json`) to fix ESLint parser/project checks.
+- Verification completed:
+  - `npm run lint` passes.
+  - `npm run lint:tests` passes (all test suites pass).
+  - `npm run build` passes (finalizing with a non-blocking Turbopack dynamic-import warning only).

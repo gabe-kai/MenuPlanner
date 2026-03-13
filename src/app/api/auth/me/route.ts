@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth/nextAuth";
 import { parseSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth/sessionCookie";
 import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 import { useRealAuth } from "@/lib/auth/authGateway";
+import { isSystemAdminUser } from "@/lib/auth/adminAuth";
 import {
   getAuthIdentityByUserId,
   getAuthIdentitySnapshot,
@@ -18,6 +19,7 @@ import {
 type AccountActor = {
   userId: string;
   familyId: string;
+  isAdmin: boolean;
 };
 
 type AccountPayload = {
@@ -26,6 +28,8 @@ type AccountPayload = {
   familyId: string;
   role: "adult" | "child";
   editPolicy?: "free" | "approval_required" | "no_edit";
+  mustChangePassword?: boolean;
+  systemRole?: "admin" | "user";
 };
 
 type ProfileUpdatePayload = {
@@ -39,10 +43,15 @@ async function getRequestActor(request: NextRequest): Promise<AccountActor | nul
     const userId = session?.user && (session.user as { id?: string }).id;
     const familyId = session?.user && (session.user as { familyId?: string }).familyId;
     const role = session?.user && (session.user as { role?: string }).role;
+    const systemRole = session?.user && (session.user as { systemRole?: string }).systemRole;
     if (!userId || !familyId || role !== "adult" && role !== "child") {
       return null;
     }
-    return { userId, familyId };
+    return {
+      userId,
+      familyId,
+      isAdmin: systemRole === "admin" || isSystemAdminUser(userId),
+    };
   }
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -56,7 +65,7 @@ async function getRequestActor(request: NextRequest): Promise<AccountActor | nul
     state.memberships,
   );
   if (!actor) return null;
-  return { userId: actor.user.id, familyId: actor.family.id };
+  return { userId: actor.user.id, familyId: actor.family.id, isAdmin: actor.isAdmin };
 }
 
 function parseUpdateNamePayload(payload: unknown): string | null {
@@ -85,6 +94,8 @@ export async function GET(request: NextRequest) {
     name: identity.name,
     familyId: identity.familyId,
     role: identity.role,
+    systemRole: actor.isAdmin ? "admin" : "user",
+    ...(identity.mustChangePassword ? { mustChangePassword: true } : {}),
     ...(editPolicy ? { editPolicy } : {}),
   };
 

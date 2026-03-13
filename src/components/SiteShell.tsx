@@ -14,8 +14,7 @@ import {
 import { useAuthAndFamilyStore } from "@/stores/authAndFamilyStore";
 
 export function SiteShell({ children }: { children: ReactNode }) {
-  const { users, currentUserId, currentFamilyId, isAuthenticated } =
-    useAuthAndFamilyStore();
+  const { users, currentUserId, currentFamilyId, isAuthenticated } = useAuthAndFamilyStore();
 
   useEffect(() => {
     void hydrateSessionFromStorage();
@@ -29,6 +28,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   ]);
 
   const session = getActiveSession();
+  const isCurrentUserAdmin = actor?.isAdmin || session.systemRole === "admin";
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-6">
@@ -96,6 +96,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
           ) : null}
           {session.isAuthenticated ? (
             <>
+              {isCurrentUserAdmin ? (
+                <Link
+                  href="/admin"
+                  className="rounded-full border border-cyan-500 px-3 py-1 text-cyan-200 hover:bg-cyan-500/20"
+                >
+                  Admin
+                </Link>
+              ) : null}
               <Link
                 href="/account"
                 className="rounded-full border border-blue-500 px-3 py-1 text-blue-200 hover:bg-blue-500/20"

@@ -6,6 +6,7 @@ import {
   getAuthIdentityByUserId,
 } from "@/lib/auth/authIdentity.server";
 import { authOptions } from "@/lib/auth/nextAuth";
+import { isSystemAdminUser } from "@/lib/auth/adminAuth";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -19,6 +20,8 @@ export async function GET() {
     familyId?: string;
     role?: string;
     name?: string;
+    systemRole?: string;
+    mustChangePassword?: boolean;
   };
   const userId = sessionUser.id;
   const familyId = sessionUser.familyId;
@@ -36,6 +39,8 @@ export async function GET() {
   const fallbackExpiresAt = Date.now() + 60 * 60 * 24 * 30 * 1000;
   const expiresAt = Number.isFinite(parsedExpiresAt) ? parsedExpiresAt : fallbackExpiresAt;
   const issuedAt = Date.now();
+  const systemRole =
+    sessionUser.systemRole === "admin" ? "admin" : isSystemAdminUser(userId) ? "admin" : "user";
 
   return NextResponse.json({
     session: {
@@ -45,7 +50,9 @@ export async function GET() {
       expiresAt,
       name: identity.name,
       role: identity.role,
+      systemRole,
       editPolicy,
+      mustChangePassword: sessionUser.mustChangePassword ?? identity.mustChangePassword,
     },
   });
 }
