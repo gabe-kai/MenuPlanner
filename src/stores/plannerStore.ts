@@ -27,7 +27,6 @@ interface PlannerState {
   weekStart: WeekStart;
   meals: PlannedMeal[];
   selectedMealId: string | null;
-  mockLeftoverCount: number;
   selectMeal: (mealId: string | null) => void;
   nextWeek: () => void;
   previousWeek: () => void;
@@ -65,7 +64,6 @@ export const usePlannerStore = create<PlannerState>((set) => ({
   weekStart: "sunday",
   meals: demoMeals,
   selectedMealId: null,
-  mockLeftoverCount: 2,
   selectMeal: (selectedMealId) => set({ selectedMealId }),
   nextWeek: () => set((state) => ({ weekOffset: state.weekOffset + 1 })),
   previousWeek: () => set((state) => ({ weekOffset: state.weekOffset - 1 })),

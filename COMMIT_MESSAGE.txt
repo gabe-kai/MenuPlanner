@@ -1,50 +1,31 @@
-Phase 3.9 – Admin Console & Cross-Entity Management
+Phase 4 – Ingredient Lane, Leftovers (Phase 4 starter)
 
-Implemented full phase 3.9 completion for admin directory sync and mutating admin actions.
+- Branch: feature/phase4-ingredient-lane
+- Goal: begin Phase 4 implementation with a functional ingredient-aware planner lane foundation.
 
-- Added real-auth admin directory API and auth-guarded actor checks.
-  - New `GET /api/admin/directory` route with centralized actor validation.
-  - Directory payload now includes authoritative users, families, edit policies, and password-reset flags.
-- Extended auth identity services (`src/lib/auth/authIdentity.server.ts`) for admin operations:
-  - Added admin identity exports: `listAuthIdentities`, `listAuthFamilies`.
-  - Added family metadata/state helpers and persistence helpers for family naming.
-  - Added `createAuthFamily`, `setAuthFamilyName`, and `setAuthIdentityFamily`.
-  - Added `setAuthIdentityTemporaryPassword`, `setPasswordChangeRequired`, and `deleteAuthIdentity`.
-  - Kept password update semantics aligned so admin-initiated resets always set `mustChangePassword`.
-- Implemented admin-user management routes:
-  - `POST /api/admin/users/[userId]/reset` to force password-reset behavior and optional temporary password.
-  - `DELETE /api/admin/users/[userId]` to delete identities (self-delete blocked).
-  - `PATCH /api/admin/users/[userId]/family` to move users across families.
-- Implemented admin-family management routes:
-  - `POST /api/admin/families` to create families.
-  - `PATCH /api/admin/families/[familyId]` to rename families.
-- Updated admin UI pages to consume real-auth admin directory and persist actions:
-  - `src/app/admin/users/page.tsx`
-    - Added directory sync via `/api/admin/directory`.
-    - Added password-reset status column and reset/delete buttons.
-    - Added API-backed reset/delete flows in real-auth mode.
-  - `src/app/admin/families/page.tsx`
-    - Added directory sync via `/api/admin/directory`.
-    - Added real-auth create/rename/bootstrap/seed flows for families.
-    - Added real-auth move flows for user migration from `fam-1`.
-- Added admin mutation audit logs for all new admin actions in logs module.
-- Updated implementation plan completion notes to reflect new 3.9 work.
+What changed
+- Added pure ingredient-lane domain helpers in `src/lib/ingredientLane.ts`:
+  - `computeLeftoverBatches(...)` to derive `LeftoverBatch[]` from planned meals + recipes
+    with expiration behavior
+  - `computeIngredientBalance(...)` to derive coverage/shortage by ingredient and unit
+  - Added supporting types: `LeftoverBatch`, `IngredientBalance`, `ParsedIngredient`
+  - Added parsing and date-key utilities used by these helpers
+- Integrated helpers into `src/app/planner/page.tsx`:
+  - Replaced the old mock leftover count with real derived leftovers from current planner data
+  - Added Leftover Lane UI (ingredient + quantity + expiration + source-derived list)
+  - Added Ingredient Balance UI showing required vs available and shortage status
+  - Wired memoization for recipes, leftovers, and balance calculation
+- Removed placeholder leftover state from `src/stores/plannerStore.ts`:
+  - removed `mockLeftoverCount` from state shape and initial state
+- Added tests in `tests/ingredient-lane.test.ts`:
+  - verifies leftover generation from planned meals
+  - verifies expiration filtering for leftovers
+  - verifies ingredient balance math including available vs required
 
-Additional stabilization work in this commit for release readiness:
-- Completed Next.js 15+ middleware hardening for edge runtime:
-  - `middleware.ts` now exports `proxy` as the default export and defines a local static `config` matcher.
-  - `src/proxy.ts` no longer imports Node-only modules (`src/lib/auth/authIdentity.server` and Node-dependent logging imports) in the edge execution path.
-  - Must-change-password enforcement now relies on session token claims during middleware checks.
-- Hardened middleware logging and auth token handling:
-  - Replaced structured logger calls in middleware with edge-safe console diagnostics.
-  - Fixed invalid actor handling path in proxy session parsing/redirect logic.
-- Improved runtime compatibility in logging and auth helpers:
-  - Updated `src/lib/log.ts` to avoid startup Edge incompatibilities from Node-only process/path usage during module init.
-  - Fixed family ID set construction in `src/lib/auth/authIdentity.server.ts` (`createAuthFamily`) to avoid `Set<string>` map/type regression.
-- Cleanup and quality cleanup:
-  - Removed unused `currentSystemRole` selector usage from `src/components/SiteShell.tsx`.
-  - Added `middleware.ts` to TypeScript lint project include set (`tsconfig.json`) to fix ESLint parser/project checks.
-- Verification completed:
-  - `npm run lint` passes.
-  - `npm run lint:tests` passes (all test suites pass).
-  - `npm run build` passes (finalizing with a non-blocking Turbopack dynamic-import warning only).
+Validation
+- `npm run lint` ✅
+- `npm test -- tests/ingredient-lane.test.ts` ✅
+- `npm run lint:tests` (full suite) ✅
+- `npm run build` ✅
+  - build remains with existing non-blocking warning: `Module not found: Can't resolve <dynamic>` in `src/lib/log.ts`
+    from prior Edge-compatible dynamic import pattern

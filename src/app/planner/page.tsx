@@ -4,6 +4,12 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { MealChip } from "@/components/MealChip";
 import { MealDetailPanel } from "@/components/MealDetailPanel";
+import {
+  computeIngredientBalance,
+  computeLeftoverBatches,
+  type IngredientBalance,
+  type LeftoverBatch,
+} from "@/lib/ingredientLane";
 import { usePlannerStore, MEAL_SLOTS } from "@/stores/plannerStore";
 import { useRecipesStore } from "@/stores/recipesStore";
 import { getCurrentWeekDays } from "@/lib/week";
@@ -18,9 +24,30 @@ export default function PlannerPage() {
     nextWeek,
     previousWeek,
     resetWeek,
-    mockLeftoverCount,
   } = usePlannerStore();
-  const { getRecipeById } = useRecipesStore();
+  const { getRecipeById, recipes } = useRecipesStore();
+  const recipesById = useMemo(
+    () =>
+      recipes.reduce(
+        (acc, recipe) => {
+          acc[recipe.id] = recipe;
+          return acc;
+        },
+        {} as Record<string, (typeof recipes)[number]>,
+      ),
+    [recipes],
+  );
+
+  const leftovers: LeftoverBatch[] = useMemo(
+    () => computeLeftoverBatches(meals, recipesById),
+    [meals, recipesById],
+  );
+  const ingredientBalances: IngredientBalance[] = useMemo(
+    () => computeIngredientBalance(meals, recipesById, leftovers),
+    [meals, recipesById, leftovers],
+  );
+
+  const visibleLeftoverCount = leftovers.length;
 
   const referenceDate = useMemo(() => {
     const base = new Date();
@@ -158,8 +185,61 @@ export default function PlannerPage() {
 
       <section className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-3 py-2 text-xs text-slate-300">
         <span className="font-semibold text-slate-200">Ingredient lane</span>{" "}
-        (placeholder): {mockLeftoverCount} leftover item
-        {mockLeftoverCount === 1 ? "" : "s"} this week (mock data).
+        {visibleLeftoverCount} leftover
+        {visibleLeftoverCount === 1 ? "" : "s"} tracked this week
+      </section>
+      <section className="rounded-xl border border-slate-800 bg-slate-900/45 p-3 text-xs text-slate-200">
+        <h3 className="mb-2 text-sm font-semibold tracking-tight text-slate-100">
+          Leftover lane
+        </h3>
+        {leftovers.length === 0 ? (
+          <p className="text-slate-500">No leftovers currently available.</p>
+        ) : (
+          <ul className="space-y-2">
+            {leftovers.map((leftover) => (
+              <li
+                key={leftover.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/35 px-3 py-2"
+              >
+                <span className="capitalize">
+                  {leftover.ingredient} · {leftover.quantity} {leftover.unit}
+                </span>
+                <span className="text-[11px] uppercase tracking-wide text-slate-400">
+                  Exp {leftover.expiresAt.slice(0, 10)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-3 text-xs text-slate-200">
+        <h3 className="mb-2 text-sm font-semibold tracking-tight text-slate-100">
+          Ingredient balance
+        </h3>
+        {ingredientBalances.length === 0 ? (
+          <p className="text-slate-500">
+            Add meals to build an ingredient balance and see shortages.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {ingredientBalances.map((balance) => (
+              <li
+                key={`${balance.ingredient}::${balance.unit}`}
+                className="flex items-start justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/30 px-3 py-2"
+              >
+                <span className="text-slate-200 capitalize">
+                  {balance.ingredient} ({balance.unit})
+                </span>
+                <span className="text-slate-400">
+                  need {balance.required}, left {balance.available}
+                  {balance.remainingShortage > 0
+                    ? ` / short ${balance.remainingShortage}`
+                    : " / covered"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {selectedMeal && (
