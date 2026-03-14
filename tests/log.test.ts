@@ -53,10 +53,11 @@ describe("log utility", () => {
     process.env.LOG_FORCE_FILE_OUTPUT = "true";
 
     const log = await loadLogger();
-    const { appendFile, mkdir } = (await import("node:fs/promises")) as {
+    const mockedFs = (await import("node:fs/promises")) as unknown as {
       appendFile: jest.Mock;
       mkdir: jest.Mock;
     };
+    const { appendFile, mkdir } = mockedFs;
 
     log.warn({
       module: "test",

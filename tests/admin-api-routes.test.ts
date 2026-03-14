@@ -160,7 +160,11 @@ describe("admin API routes", () => {
     const response = await moveUserRoute(asRequest({ familyId: "fam-2" }), {
       params: Promise.resolve({ userId: "sarah" }),
     });
-    const body = (await response.json()) as { ok?: boolean; familyId?: string };
+    const body = (await response.json()) as {
+      ok?: boolean;
+      familyId?: string;
+      userId?: string;
+    };
 
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);

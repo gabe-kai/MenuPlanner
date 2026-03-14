@@ -20,4 +20,4 @@ pnpm-lock.yaml
 .data/
 prisma/dev.db
 prisma/dev.db-journal
-
+COMMIT_MESSAGE.txt

@@ -102,6 +102,7 @@ describe("account API endpoints", () => {
       name: "Mom",
       familyId: "fam-1",
       role: "adult",
+      mustChangePassword: false,
     });
 
     const response = await GET(buildRequestCookie("mom", "fam-1"));
@@ -124,6 +125,7 @@ describe("account API endpoints", () => {
       name: "Mom",
       familyId: "fam-1",
       role: "adult",
+      mustChangePassword: false,
     });
 
     const response = await PUT(
